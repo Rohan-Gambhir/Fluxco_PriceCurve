@@ -1,7 +1,6 @@
 // Sticky header: FluxCo wordmark + logo mark, source segmented control,
-// live status pill (row count · last sync, green pulse / offline), theme tints.
+// live status pill (row count · last sync, green pulse / offline), user badge.
 
-import { THEMES } from '../lib/constants.js'
 import { segBtn } from '../lib/ui.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
 
@@ -125,24 +124,6 @@ export default function Header({ spec, persist, data }) {
           </button>
         </div>
       )}
-
-      <div role="group" aria-label="Visual theme" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-        {THEMES.map((t, i) => (
-          <button
-            key={t.name}
-            onClick={() => persist({ theme: i })}
-            title={t.name}
-            aria-label={`${t.name} theme`}
-            style={{
-              width: 22, height: 22, borderRadius: 7, cursor: 'pointer',
-              background: t.vars['--accent'],
-              border: i === spec.theme ? '2px solid var(--text)' : '2px solid transparent',
-              boxShadow: i === spec.theme ? '0 0 0 2px var(--panel)' : 'none',
-              padding: 0,
-            }}
-          />
-        ))}
-      </div>
     </header>
   )
 }

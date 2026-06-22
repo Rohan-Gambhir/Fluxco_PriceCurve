@@ -20,7 +20,8 @@ import { cardStyle } from './lib/ui.js'
 export default function App() {
   const { spec, persist, setKva } = useSpec()
   const data = useQuotes()
-  const themeVars = THEMES[spec.theme].vars
+  // Brand theme is locked to FluxCo navy (index 0); the switcher was removed.
+  const themeVars = THEMES[0].vars
   const loaded = !data.loading && !data.error && !!data.model
   const derived = loaded ? derive(spec, data.rows, data.model) : null
   const hasEstimate = loaded && derived && derived.est
