@@ -1,34 +1,29 @@
-// ============================================================================
-// Data layer — the SINGLE place the app talks to Supabase.
-// Reads the cleaned `clean_quotes` view (denormalized read model), never the
-// raw transformer_quotes table. Keep all queries here so the source can evolve
-// without touching the UI (hard constraint from the brief).
-// ============================================================================
-
-const URL = import.meta.env.VITE_SUPABASE_URL
-const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-if (!URL || !KEY) {
-  // Surfaced loudly in dev so a missing .env doesn't fail silently.
-  console.error(
-    'Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY. Copy .env.example to .env and fill them in.'
-  )
-}
-
-const ENDPOINT = `${URL}/rest/v1/clean_quotes`
+// Data layer — the SINGLE place the frontend reads quote data.
+// It now calls the gated `/api/quotes` serverless route (which verifies the
+// Google ID token on the backend, then reads the cleaned `clean_quotes` view
+// from Supabase). The Supabase key no longer ships to the browser.
+//
+// Pass the auth-aware `authFetch` from useAuth(); it attaches the Bearer token
+// and handles 401s. Falls back to plain fetch when auth is disabled.
 
 /**
- * Fetch all cleaned quote/bid rows, ordered by rating ascending.
+ * Fetch all cleaned quote/bid rows via the gated API route.
  * Applies the documented fallback: if `ppu` is missing but `dpk > 0`,
  * compute ppu = dpk * kva.
+ * @param {(url: string, opts?: object) => Promise<Response>} [authFetch]
  * @returns {Promise<Array<object>>}
  */
-export async function fetchQuotes() {
-  const r = await fetch(`${ENDPOINT}?select=*&order=kva.asc`, {
-    headers: { apikey: KEY, Authorization: 'Bearer ' + KEY },
-  })
+export async function fetchQuotes(authFetch) {
+  const doFetch = authFetch || fetch
+  const r = await doFetch('/api/quotes')
   if (!r.ok) {
-    throw new Error('HTTP ' + r.status + ' — ' + (await r.text()).slice(0, 120))
+    let detail = ''
+    try {
+      detail = (await r.json())?.error || ''
+    } catch {
+      /* non-JSON body */
+    }
+    throw new Error('HTTP ' + r.status + (detail ? ' — ' + detail : ''))
   }
   const raw = await r.json()
   return raw.map((row) => {

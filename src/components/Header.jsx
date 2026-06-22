@@ -3,6 +3,7 @@
 
 import { THEMES } from '../lib/constants.js'
 import { segBtn } from '../lib/ui.js'
+import { useAuth } from '../auth/AuthProvider.jsx'
 
 const SOURCES = [
   ['quote', 'Quotes'],
@@ -14,6 +15,7 @@ export default function Header({ spec, persist, data }) {
   const { loading, error, total, synced } = data
   const loaded = !loading && !error && !!data.model
   const statusLabel = loaded ? `${total} rows · ${synced}` : error ? 'offline' : 'connecting…'
+  const { authEnabled, email, signOut } = useAuth()
 
   return (
     <header
@@ -80,7 +82,7 @@ export default function Header({ spec, persist, data }) {
       </div>
 
       <div
-        title={'Live from clean_quotes view · ' + (import.meta.env.VITE_SUPABASE_URL || '')}
+        title="Live from the clean_quotes view"
         style={{
           display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px',
           background: 'var(--panel2)', border: '1px solid var(--line)', borderRadius: 10,
@@ -98,6 +100,31 @@ export default function Header({ spec, persist, data }) {
         />
         <span style={{ fontWeight: 600, color: 'var(--text)' }}>{statusLabel}</span>
       </div>
+
+      {authEnabled && email && (
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '5px 6px 5px 12px',
+            background: 'var(--panel2)', border: '1px solid var(--line)', borderRadius: 10,
+            fontSize: 12, color: 'var(--muted)',
+          }}
+        >
+          <span style={{ fontWeight: 600, color: 'var(--text)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {email}
+          </span>
+          <button
+            onClick={signOut}
+            title="Sign out"
+            style={{
+              border: '1px solid var(--line)', background: 'var(--panel)', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 11, fontWeight: 600, color: 'var(--muted)',
+              padding: '4px 9px', borderRadius: 7,
+            }}
+          >
+            Sign out
+          </button>
+        </div>
+      )}
 
       <div role="group" aria-label="Visual theme" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
         {THEMES.map((t, i) => (
