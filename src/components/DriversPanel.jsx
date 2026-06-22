@@ -1,9 +1,17 @@
-// Price drivers card: clickable multiplicative add-ons. Each shows its +%,
-// a bar (capped at +50% visual), its supporting note, and its sample count n
-// (flagged red when n ≤ 1 — thin evidence, per the brief).
+// Price drivers card: clickable multiplicative add-ons. Each row leads with its
+// exact price delta (the +% multiplier) as a large, bold headline tied to the
+// bar, with the On/Add state beside it and the supporting evidence note + sample
+// count n below (n flagged red when ≤ 1 — thin evidence, per the brief).
 
 import { ADDONS } from '../lib/constants.js'
 import { cardStyle, overline } from '../lib/ui.js'
+
+// Exact delta label: +40%, +26%, +0.5% (keep one decimal only when < 1%).
+function pctLabel(factor) {
+  const raw = (factor - 1) * 100
+  const rounded = Math.round(raw * 10) / 10
+  return '+' + rounded + '%'
+}
 
 export default function DriversPanel({ spec, persist }) {
   return (
@@ -13,18 +21,20 @@ export default function DriversPanel({ spec, persist }) {
         <div style={{ fontSize: 11, color: 'var(--faint)' }}>click to apply</div>
       </div>
       <div style={{ fontSize: 11.5, color: 'var(--faint)', marginBottom: 14, lineHeight: 1.4 }}>
-        Directional multipliers — several rest on 1–3 observations. Treat as evidence, not truth.
+        Each adds the price delta shown to the estimate. Directional multipliers — several rest on
+        1–3 observations. Treat as evidence, not truth.
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
         {ADDONS.map((a) => {
           const on = !!spec.addons[a.id]
-          const pct = Math.round((a.factor - 1) * 100)
+          const pctRaw = (a.factor - 1) * 100
           const thin = a.n <= 1
           return (
             <button
               key={a.id}
               onClick={() => persist({ addons: { ...spec.addons, [a.id]: !on } })}
               aria-pressed={on}
+              aria-label={`${a.label}: ${pctLabel(a.factor)} price delta`}
               style={{
                 display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer',
                 fontFamily: 'inherit', color: 'var(--text)',
@@ -35,26 +45,37 @@ export default function DriversPanel({ spec, persist }) {
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                 <span style={{ fontSize: 13, fontWeight: 600, textAlign: 'left', lineHeight: 1.2 }}>{a.label}</span>
-                <span
-                  style={{
-                    flex: 'none', fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 7,
-                    background: on ? 'var(--accent)' : 'var(--panel2)',
-                    color: on ? '#fff' : 'var(--muted)',
-                    border: on ? 'none' : '1px solid var(--line)',
-                  }}
-                >
-                  {on ? 'On' : 'Add'}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
+                  <span
+                    style={{
+                      fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 7,
+                      background: on ? 'var(--accent)' : 'var(--panel2)',
+                      color: on ? '#fff' : 'var(--muted)',
+                      border: on ? 'none' : '1px solid var(--line)',
+                    }}
+                  >
+                    {on ? 'On' : 'Add'}
+                  </span>
+                  {/* The headline price delta — the obvious number for each driver. */}
+                  <span
+                    style={{
+                      fontFamily: "'Geist'", fontSize: 19, fontWeight: 800, letterSpacing: '-.01em',
+                      lineHeight: 1, color: on ? 'var(--accent)' : 'var(--text)',
+                    }}
+                  >
+                    {pctLabel(a.factor)}
+                  </span>
                 </span>
               </div>
-              <div style={{ height: 6, borderRadius: 4, background: 'var(--line)', margin: '9px 0 7px', overflow: 'hidden' }}>
+              <div style={{ height: 7, borderRadius: 4, background: 'var(--line)', margin: '10px 0 7px', overflow: 'hidden' }}>
                 <div
                   style={{
-                    height: '100%', width: (Math.min(pct, 50) / 50) * 100 + '%',
+                    height: '100%', width: (Math.min(pctRaw, 50) / 50) * 100 + '%',
                     background: on ? 'var(--accent)' : 'var(--faint)', borderRadius: 4, transition: 'width .2s',
                   }}
                 />
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                 <span style={{ fontSize: 11.5, color: 'var(--faint)', textAlign: 'left' }}>{a.note}</span>
                 <span
                   style={{
