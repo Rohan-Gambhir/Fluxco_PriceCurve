@@ -2,6 +2,7 @@
 // (aside controls / main results). One coherent state (useSpec) drives every
 // view; data is fetched once (useQuotes) and the model is derived from it.
 
+import { useState } from 'react'
 import { useSpec } from './hooks/useSpec.js'
 import { useQuotes } from './hooks/useQuotes.js'
 import { derive } from './lib/pricing.js'
@@ -15,11 +16,13 @@ import EstimateCard from './components/EstimateCard.jsx'
 import ConfidencePanel from './components/ConfidencePanel.jsx'
 import ChartsSection from './components/ChartsSection.jsx'
 import Comparables from './components/Comparables.jsx'
+import DocPreview from './components/DocPreview.jsx'
 import { cardStyle } from './lib/ui.js'
 
 export default function App() {
   const { spec, persist, setKva } = useSpec()
   const data = useQuotes()
+  const [previewRow, setPreviewRow] = useState(null) // source-document preview
   // Brand theme is locked to FluxCo navy (index 0); the switcher was removed.
   const themeVars = THEMES[0].vars
   const loaded = !data.loading && !data.error && !!data.model
@@ -91,7 +94,7 @@ export default function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <EstimateCard spec={spec} derived={derived} />
               <ConfidencePanel spec={spec} derived={derived} />
-              <ChartsSection spec={spec} persist={persist} derived={derived} model={data.model} themeVars={themeVars} />
+              <ChartsSection spec={spec} persist={persist} derived={derived} model={data.model} themeVars={themeVars} onPreview={setPreviewRow} />
               <Comparables derived={derived} />
             </div>
           )}
@@ -103,6 +106,8 @@ export default function App() {
           </footer>
         </main>
       </div>
+
+      <DocPreview row={previewRow} onClose={() => setPreviewRow(null)} />
     </div>
   )
 }

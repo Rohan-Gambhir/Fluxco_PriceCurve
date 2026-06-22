@@ -22,7 +22,7 @@ function legendItems(d, colorBy) {
   return [...seen.values()]
 }
 
-export default function ChartsSection({ spec, persist, derived, model, themeVars }) {
+export default function ChartsSection({ spec, persist, derived, model, themeVars, onPreview }) {
   const d = derived
   const legend = legendItems(d, spec.colorBy)
   const mixedBasis = d.basesVis.length > 1
@@ -61,13 +61,13 @@ export default function ChartsSection({ spec, persist, derived, model, themeVars
           <figcaption style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)', marginBottom: 4 }}>
             Unit price vs rating <span style={{ color: 'var(--faint)', fontWeight: 500 }}>· log–log, fit + P10–P90 band</span>
           </figcaption>
-          <Chart kind="price" derived={d} spec={spec} model={model} themeVars={themeVars} />
+          <Chart kind="price" derived={d} spec={spec} model={model} themeVars={themeVars} onPreview={onPreview} />
         </figure>
         <figure style={{ flex: 1, minWidth: '100%', margin: 0 }}>
           <figcaption style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)', marginBottom: 4 }}>
             $/kVA vs rating <span style={{ color: 'var(--faint)', fontWeight: 500 }}>· economies of scale</span>
           </figcaption>
-          <Chart kind="scale" derived={d} spec={spec} model={model} themeVars={themeVars} />
+          <Chart kind="scale" derived={d} spec={spec} model={model} themeVars={themeVars} onPreview={onPreview} />
         </figure>
       </div>
 

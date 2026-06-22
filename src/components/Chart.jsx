@@ -7,7 +7,7 @@ import React, { useState } from 'react'
 import { REGION_LABELS } from '../lib/constants.js'
 import { fmtMoney, fmtKva, cap, colorFor } from '../lib/format.js'
 
-function buildChart(kind, d, S, model, pal, hover, setHover) {
+function buildChart(kind, d, S, model, pal, hover, setHover, onPreview) {
   const h = (t, p, ...c) => React.createElement(t, p, ...c)
   const m = model
   const accent = pal['--accent'], faint = pal['--faint'], line = pal['--line'],
@@ -67,7 +67,12 @@ function buildChart(kind, d, S, model, pal, hover, setHover) {
   const onLeave = () => setHover(null)
   vis.forEach((r, i) => {
     const cx = sx(r.kva), cy = sy(vals(r)), col = colorFor(r, S.colorBy), hov = i === hovIdx
-    const evt = { onMouseEnter: onEnter(i), onMouseLeave: onLeave, style: { cursor: 'pointer' } }
+    const evt = {
+      onMouseEnter: onEnter(i),
+      onMouseLeave: onLeave,
+      onClick: () => onPreview && onPreview(r),
+      style: { cursor: 'pointer' },
+    }
     if (r.src === 'bid') {
       const s = hov ? 6 : 4.3
       K.push(h('path', { key: 'pt' + i, d: `M${cx} ${cy - s}L${cx + s} ${cy}L${cx} ${cy + s}L${cx - s} ${cy}Z`, fill: col, opacity: hov ? 1 : 0.82, stroke: '#fff', strokeWidth: hov ? 1.4 : 0.7, ...evt }))
@@ -96,6 +101,11 @@ function buildChart(kind, d, S, model, pal, hover, setHover) {
       { t: fmtMoney(r.ppu) + ' / unit     $' + Math.round(r.dpk) + '/kVA', w: 700, c: text, s: 12.5 },
       { t: 'extraction conf ' + Math.round((r.dpk_conf || 0) * 100) + '%', w: 500, c: faint, s: 10.5 },
     ]
+    if (r.filename) {
+      const fn = r.filename.split('#')[0]
+      const fnShort = fn.length > 30 ? fn.slice(0, 28) + '…' : fn
+      lines.push({ t: 'source: ' + fnShort + '  (click to preview)', w: 600, c: accent, s: 10.5 })
+    }
     const pad = 11, lh = 17, boxW = Math.max(...lines.map((l) => l.t.length * l.s * 0.55)) + pad * 2, boxH = lines.length * lh + pad * 2 - 4
     let bx = cx + 14, by = cy - boxH - 14
     if (bx + boxW > W - 4) bx = cx - boxW - 14
@@ -112,7 +122,7 @@ function buildChart(kind, d, S, model, pal, hover, setHover) {
   return h('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': lab, style: { width: '100%', height: 'auto', display: 'block', fontFamily: 'Geist, sans-serif' } }, K)
 }
 
-export default function Chart({ kind, derived, spec, model, themeVars }) {
+export default function Chart({ kind, derived, spec, model, themeVars, onPreview }) {
   const [hover, setHover] = useState(null)
-  return buildChart(kind, derived, spec, model, themeVars, hover, setHover)
+  return buildChart(kind, derived, spec, model, themeVars, hover, setHover, onPreview)
 }
