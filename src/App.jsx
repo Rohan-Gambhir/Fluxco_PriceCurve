@@ -12,6 +12,7 @@ import Header from './components/Header.jsx'
 import SpecPanel from './components/SpecPanel.jsx'
 import DriversPanel from './components/DriversPanel.jsx'
 import IncotermFilter from './components/IncotermFilter.jsx'
+import ComparableFilters from './components/ComparableFilters.jsx'
 import EstimateCard from './components/EstimateCard.jsx'
 import ConfidencePanel from './components/ConfidencePanel.jsx'
 import ChartsSection from './components/ChartsSection.jsx'
@@ -65,6 +66,7 @@ export default function App() {
           }}
         >
           <SpecPanel spec={spec} persist={persist} setKva={setKva} />
+          {derived && <ComparableFilters spec={spec} persist={persist} derived={derived} />}
           <DriversPanel spec={spec} persist={persist} />
           {derived && <IncotermFilter spec={spec} persist={persist} derived={derived} />}
         </aside>

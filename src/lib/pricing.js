@@ -13,6 +13,7 @@
 // ============================================================================
 
 import { ADDONS } from './constants.js'
+import { passesFilters } from './filters.js'
 
 // Linear-interpolated percentile of a numeric array.
 export function _pct(arr, q) {
@@ -75,7 +76,7 @@ export function derive(spec, rows, model) {
   const latest = rows.filter((r) => r.is_latest)
   const ikey = (r) => r.incoterm_basis || 'n/a'
   const srcSet = latest.filter((r) => (S.source === 'both' ? true : r.src === S.source))
-  const visible = srcSet.filter((r) => !(S.incoOff || []).includes(ikey(r)))
+  const visible = srcSet.filter((r) => !(S.incoOff || []).includes(ikey(r)) && passesFilters(r, S))
   const f = fitAt(S.kva, S.source, model)
   const base = f ? f.a * Math.pow(S.kva, f.b) : null
   let factor = 1

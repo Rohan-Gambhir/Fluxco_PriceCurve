@@ -26,10 +26,10 @@ export function useSpec() {
   // Mirror the persisted subset to localStorage whenever spec changes.
   useEffect(() => {
     try {
-      const { source, kva, hv, lv, units, addons, colorBy, theme, incoOff } = spec
+      const { source, kva, hv, lv, units, addons, colorBy, theme, incoOff, windOff, regionOff, unitsOff, hvOff } = spec
       localStorage.setItem(
         SPEC_STORAGE_KEY,
-        JSON.stringify({ source, kva, hv, lv, units, addons, colorBy, theme, incoOff })
+        JSON.stringify({ source, kva, hv, lv, units, addons, colorBy, theme, incoOff, windOff, regionOff, unitsOff, hvOff })
       )
     } catch (e) {
       /* ignore quota / private-mode errors */

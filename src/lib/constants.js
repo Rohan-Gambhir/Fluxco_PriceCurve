@@ -84,4 +84,8 @@ export const DEFAULT_SPEC = {
   colorBy: 'source',
   theme: 0,
   incoOff: [],
+  windOff: [],
+  regionOff: [],
+  unitsOff: [],
+  hvOff: [],
 }
