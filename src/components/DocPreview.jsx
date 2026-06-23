@@ -28,7 +28,12 @@ export default function DocPreview({ row, onClose }) {
     setState({ loading: true, error: null, doc: null })
     ;(async () => {
       try {
-        const doc = await fetchDocUrl(authFetch, { project: row.project_id, file: row.filename })
+        const doc = await fetchDocUrl(authFetch, {
+          project: row.project_id,
+          oem: row.oem_id,
+          file: row.filename,
+          rev: row.rev,
+        })
         if (!cancelled) setState({ loading: false, error: null, doc })
       } catch (e) {
         if (!cancelled) setState({ loading: false, error: String((e && e.message) || e), doc: null })

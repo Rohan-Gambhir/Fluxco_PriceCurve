@@ -55,24 +55,37 @@ function devApiPlugin(env) {
           if (!SERVICE_KEY) {
             return json(res, 501, { error: 'Set SUPABASE_SERVICE_ROLE_KEY in .env to preview source PDFs locally' })
           }
+          const slug = (s) => (s || '').replace(/[^A-Za-z0-9._-]/g, '_')
           const params = new URL(req.url, 'http://localhost').searchParams
-          const file = (params.get('file') || '').split('#')[0]
-          const project = params.get('project') || ''
-          if (!file) return json(res, 400, { error: 'Missing file' })
-          const objPath = project ? `${project}/${file}` : file
-          if (objPath.includes('..')) return json(res, 400, { error: 'Bad path' })
-          const enc = objPath.split('/').map(encodeURIComponent).join('/')
+          const rawFile = (params.get('file') || '').split('#')[0]
+          const project = slug(params.get('project') || '')
+          const oem = slug(params.get('oem') || '')
+          const fname = slug(rawFile)
+          const rev = parseInt(params.get('rev') || '0', 10) || 0
+          if (!oem || !fname) return json(res, 400, { error: 'Missing oem/file' })
+          const folder = [project, oem, fname].filter(Boolean).join('/')
+          if (folder.includes('..')) return json(res, 400, { error: 'Bad path' })
+          const STORAGE = SUPA_URL + '/storage/v1'
+          const hdrs = { Authorization: 'Bearer ' + SERVICE_KEY, 'Content-Type': 'application/json' }
+          const sign = async (objPath) => {
+            const enc = objPath.split('/').map(encodeURIComponent).join('/')
+            const r = await fetch(`${STORAGE}/object/sign/${BUCKET}/${enc}`, { method: 'POST', headers: hdrs, body: JSON.stringify({ expiresIn: 120 }) })
+            if (r.status !== 200) return null
+            const signed = (await r.json()).signedURL || ''
+            return signed ? (signed.startsWith('/') ? STORAGE + signed : signed) : null
+          }
           try {
-            const r = await fetch(`${SUPA_URL}/storage/v1/object/sign/${BUCKET}/${enc}`, {
-              method: 'POST',
-              headers: { Authorization: 'Bearer ' + SERVICE_KEY, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ expiresIn: 120 }),
-            })
-            const text = await r.text()
-            if (r.status !== 200) return json(res, r.status, { error: `Storage sign ${r.status}: ${text.slice(0, 140)}` })
-            const signed = JSON.parse(text).signedURL || ''
-            const full = signed.startsWith('/') ? SUPA_URL + '/storage/v1' + signed : signed
-            return json(res, 200, { url: full, filename: file, kind: file.toLowerCase().endsWith('.pdf') ? 'pdf' : 'other' })
+            let url = await sign(`${folder}/rev${rev}.pdf`)
+            if (!url) {
+              const lr = await fetch(`${STORAGE}/object/list/${BUCKET}`, { method: 'POST', headers: hdrs, body: JSON.stringify({ prefix: folder, limit: 100, sortBy: { column: 'name', order: 'asc' } }) })
+              const items = lr.status === 200 ? await lr.json() : []
+              const names = items.filter((it) => it.id && (it.name || '').toLowerCase().endsWith('.pdf')).map((it) => it.name)
+              const revs = names.filter((n) => /^rev\d+\.pdf$/.test(n)).sort()
+              const pick = names.includes(`rev${rev}.pdf`) ? `rev${rev}.pdf` : revs.length ? revs[revs.length - 1] : names[0]
+              if (pick) url = await sign(`${folder}/${pick}`)
+            }
+            if (!url) return json(res, 404, { error: 'Source document not found in storage' })
+            return json(res, 200, { url, filename: rawFile, kind: 'pdf' })
           } catch (e) {
             return json(res, 502, { error: 'Sign request failed: ' + String(e) })
           }
