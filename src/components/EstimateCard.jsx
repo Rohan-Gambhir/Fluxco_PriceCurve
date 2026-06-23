@@ -69,14 +69,35 @@ export default function EstimateCard({ spec, derived }) {
       <div style={{ marginBottom: 20 }}>
         <div style={overline}>Estimated base price</div>
         <div style={{ fontFamily: "'Lato',sans-serif", fontSize: 48, fontWeight: 300, letterSpacing: '-.01em', lineHeight: 1, marginTop: 7 }}>
-          {fmtMoney(e.p50)}
+          {fmtMoney(e.base)}
         </div>
         <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 8 }}>
-          Midpoint of the P10–P90 band · {regimeLabel(spec.source, spec.kva)}
+          Base curve · {regimeLabel(spec.source, spec.kva)}
         </div>
 
-        {/* secondary ranges */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 28, marginTop: 16 }}>
+        {/* Base curve → price adders → Estimate. The base stays fixed; only the
+            Estimate moves as adders are toggled. */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginTop: 18 }}>
+          {chips.map((c, i) => (
+            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+              <span
+                style={{
+                  display: 'inline-flex', alignItems: 'baseline', gap: 7, fontFamily: "'Geist'",
+                  fontSize: 17, fontWeight: 700, padding: '8px 14px', borderRadius: 10,
+                  background: c.final ? 'var(--accent)' : 'var(--panel2)',
+                  color: c.final ? '#fff' : 'var(--text)',
+                  border: c.final ? 'none' : '1px solid var(--line)',
+                }}
+              >
+                <span style={{ opacity: 0.62, fontWeight: 500, fontSize: 12.5 }}>{c.label}</span> {c.val}
+              </span>
+              {i < chips.length - 1 && <span style={{ color: 'var(--faint)', fontSize: 17, alignSelf: 'center' }}>→</span>}
+            </span>
+          ))}
+        </div>
+
+        {/* secondary ranges (around the estimate) */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 28, marginTop: 18 }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', letterSpacing: '.06em' }}>
               Unit-price range · P10–P90
@@ -120,27 +141,7 @@ export default function EstimateCard({ spec, derived }) {
         <span style={{ color: 'var(--muted)' }}>{dotsCaption}</span>
       </div>
 
-      {/* breakdown chips */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--line)' }}>
-        {chips.map((c, i) => (
-          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <span
-              style={{
-                display: 'inline-flex', alignItems: 'baseline', gap: 5, fontFamily: "'Geist'",
-                fontSize: 13, fontWeight: 700, padding: '5px 11px', borderRadius: 9,
-                background: c.final ? 'var(--accent)' : 'var(--panel2)',
-                color: c.final ? '#fff' : 'var(--text)',
-                border: c.final ? 'none' : '1px solid var(--line)',
-              }}
-            >
-              <span style={{ opacity: 0.62, fontWeight: 500 }}>{c.label}</span> {c.val}
-            </span>
-            {i < chips.length - 1 && <span style={{ color: 'var(--faint)', fontSize: 13, alignSelf: 'center' }}>→</span>}
-          </span>
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginTop: 16 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--line)' }}>
         <span
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, fontWeight: 700,

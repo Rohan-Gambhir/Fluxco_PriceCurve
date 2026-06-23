@@ -6,7 +6,7 @@ import { useAuth } from '../auth/AuthProvider.jsx'
 
 const SOURCES = [
   ['quote', 'Quotes'],
-  ['bid', 'Bids'],
+  ['bid', 'Public Bids'],
   ['both', 'Both'],
 ]
 

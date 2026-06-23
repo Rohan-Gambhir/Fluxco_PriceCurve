@@ -43,9 +43,9 @@ export const THEMES = [
 
 // Multiplicative price drivers. Several rest on 1–3 observations (see `n`) —
 // presented as directional evidence, not precise truths.
+// Winding is a comparable filter (see lib/filters.js), not a price adder.
 export const ADDONS = [
   { id: 'basis', label: 'Ship ex-works → delivered (DDP)', short: 'DDP', factor: 1.40, note: '+28–70% observed (freight + duty)', n: 3 },
-  { id: 'wind',  label: 'Aluminium → copper winding',      short: 'copper', factor: 1.26, note: '≈ +$10.9k / unit @ 3 MVA', n: 1 },
   { id: 'oil',   label: 'Mineral oil → natural ester',      short: 'ester', factor: 1.10, note: 'ester fluid premium', n: 2 },
   { id: 'ul',    label: 'Add UL listing',                   short: 'UL', factor: 1.13, note: '≈ +$73.5k', n: 1 },
   { id: 'fat',   label: 'FAT / TÜV witness test',           short: 'FAT', factor: 1.005, note: '≈ +$2.4k (info only)', n: 1 },
@@ -64,9 +64,9 @@ export const PRESETS = [750, 2500, 3000, 5000, 10000, 20000, 30000]
 // Incoterm display order in the filter.
 export const INCO_ORDER = ['EXW', 'FOB', 'CIF', 'CIP', 'DDP', 'n/a']
 
-// color-by dimensions for the charts
+// color-by dimensions for the charts (Source is dropped — quote/bid is already
+// encoded by marker shape: circle vs diamond).
 export const COLOR_BYS = [
-  ['source', 'Source'],
   ['region', 'Origin'],
   ['winding', 'Winding'],
   ['incoterm', 'Incoterm'],
@@ -80,8 +80,8 @@ export const DEFAULT_SPEC = {
   hv: 34.5,
   lv: 0.208,
   units: 1,
-  addons: { basis: false, wind: false, oil: false, ul: false, fat: false },
-  colorBy: 'source',
+  addons: { basis: false, oil: false, ul: false, fat: false },
+  colorBy: 'region',
   theme: 0,
   incoOff: [],
   windOff: [],

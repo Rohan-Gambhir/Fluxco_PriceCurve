@@ -11,6 +11,8 @@ function loadInitial() {
   try {
     const s = JSON.parse(localStorage.getItem(SPEC_STORAGE_KEY) || 'null')
     if (s && typeof s === 'object') {
+      // 'source' color-by was removed — fall back to the default.
+      if (s.colorBy === 'source') s.colorBy = DEFAULT_SPEC.colorBy
       // Merge so newly-added defaults survive an older saved blob.
       return { ...DEFAULT_SPEC, ...s, addons: { ...DEFAULT_SPEC.addons, ...(s.addons || {}) } }
     }
