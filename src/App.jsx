@@ -34,7 +34,10 @@ export default function App() {
     <div
       style={{
         ...themeVars,
-        minHeight: '100vh',
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
         background: 'var(--bg)',
         fontFamily: "'Geist',system-ui,sans-serif",
         color: 'var(--text)',
@@ -42,15 +45,18 @@ export default function App() {
     >
       <Header spec={spec} persist={persist} data={data} />
 
+      {/* Two columns that each scroll independently within the viewport. */}
       <div
         style={{
+          flex: 1,
+          minHeight: 0,
           display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'flex-start',
           gap: 20,
-          padding: '22px 26px 60px',
+          padding: '22px 26px',
           maxWidth: 1560,
+          width: '100%',
           margin: '0 auto',
+          boxSizing: 'border-box',
         }}
       >
         {/* ===== LEFT RAIL: SPEC + DRIVERS + INCOTERM ===== */}
@@ -58,11 +64,12 @@ export default function App() {
           style={{
             flex: 'none',
             width: 316,
-            position: 'sticky',
-            top: 84,
+            minHeight: 0,
+            overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
             gap: 18,
+            paddingBottom: 32,
           }}
         >
           <SpecPanel spec={spec} persist={persist} setKva={setKva} />
@@ -72,7 +79,7 @@ export default function App() {
         </aside>
 
         {/* ===== MAIN: RESULTS ===== */}
-        <main style={{ flex: 1, minWidth: 440, display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <main style={{ flex: 1, minWidth: 0, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 32 }}>
           {data.loading && (
             <div style={{ ...cardStyle, padding: 64, textAlign: 'center', color: 'var(--faint)' }}>
               <div
