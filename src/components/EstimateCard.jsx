@@ -63,7 +63,7 @@ export default function EstimateCard({ spec, derived }) {
       style={{ ...cardStyle, padding: '24px 26px' }}
     >
       <div style={{ marginBottom: 20 }}>
-        <div style={overline}>Estimated unit price</div>
+        <div style={overline}>Estimated base price</div>
         <div style={{ fontFamily: "'Lato',sans-serif", fontSize: 48, fontWeight: 300, letterSpacing: '-.01em', lineHeight: 1, marginTop: 7 }}>
           {fmtMoney(e.p50)}
         </div>
