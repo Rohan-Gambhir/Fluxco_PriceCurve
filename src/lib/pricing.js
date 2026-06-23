@@ -35,8 +35,11 @@ export function fitOne(pts) {
     const X = Math.log(p.x), Y = Math.log(p.y)
     sx += X; sy += Y; sxx += X * X; sxy += X * Y
   }
-  const b = (n * sxy - sx * sy) / (n * sxx - sx * sx)
+  const denom = n * sxx - sx * sx
+  if (denom === 0) return null // all points share one kVA — slope is undefined
+  const b = (n * sxy - sx * sy) / denom
   const a = Math.exp((sy - b * sx) / n)
+  if (!isFinite(a) || !isFinite(b)) return null
   const ratios = pts.map((p) => p.y / (a * Math.pow(p.x, b)))
   return { a, b, lo: _pct(ratios, 0.1), hi: _pct(ratios, 0.9), n }
 }

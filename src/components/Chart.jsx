@@ -67,11 +67,13 @@ function buildChart(kind, d, S, model, pal, hover, setHover, onPreview) {
   const onLeave = () => setHover(null)
   vis.forEach((r, i) => {
     const cx = sx(r.kva), cy = sy(vals(r)), col = colorFor(r, S.colorBy), hov = i === hovIdx
+    // Only quote rows have a source PDF in the bucket; bids are xlsx bid sheets.
+    const canPreview = onPreview && r.src === 'quote'
     const evt = {
       onMouseEnter: onEnter(i),
       onMouseLeave: onLeave,
-      onClick: () => onPreview && onPreview(r),
-      style: { cursor: 'pointer' },
+      onClick: canPreview ? () => onPreview(r) : undefined,
+      style: { cursor: canPreview ? 'pointer' : 'default' },
     }
     if (r.src === 'bid') {
       const s = hov ? 6 : 4.3
@@ -91,7 +93,7 @@ function buildChart(kind, d, S, model, pal, hover, setHover, onPreview) {
     tm.push(h('text', { key: 'tt', x: cx, y: yt + 11, textAnchor: 'middle', fontSize: 11, fill: accent, fontWeight: 700 }, 'your spec'))
     K.push(h('g', { key: 'tm', style: { pointerEvents: 'none' } }, tm))
   }
-  if (hovIdx >= 0) {
+  if (hovIdx >= 0 && hovIdx < vis.length) {
     const r = vis[hovIdx], cx = sx(r.kva), cy = sy(vals(r)), pc = colorFor(r, S.colorBy)
     const lines = [
       { t: r.oem_id + (r.rev > 0 ? '  · r' + r.rev : ''), w: 700, c: text, s: 13 },
@@ -104,7 +106,8 @@ function buildChart(kind, d, S, model, pal, hover, setHover, onPreview) {
     if (r.filename) {
       const fn = r.filename.split('#')[0]
       const fnShort = fn.length > 30 ? fn.slice(0, 28) + '…' : fn
-      lines.push({ t: 'source: ' + fnShort + '  (click to preview)', w: 600, c: accent, s: 10.5 })
+      const isQuote = r.src === 'quote'
+      lines.push({ t: 'source: ' + fnShort + (isQuote ? '  (click to preview)' : ''), w: 600, c: isQuote ? accent : faint, s: 10.5 })
     }
     const pad = 11, lh = 17, boxW = Math.max(...lines.map((l) => l.t.length * l.s * 0.55)) + pad * 2, boxH = lines.length * lh + pad * 2 - 4
     let bx = cx + 14, by = cy - boxH - 14

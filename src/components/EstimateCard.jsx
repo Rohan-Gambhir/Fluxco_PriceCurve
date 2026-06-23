@@ -4,7 +4,7 @@
 // and a thin-data warning. Honest ranges, never a false-precision point price.
 
 import { ADDONS, SRC_COLORS } from '../lib/constants.js'
-import { fmtMoney, fmtKva } from '../lib/format.js'
+import { fmtMoney, fmtKva, pctLabel } from '../lib/format.js'
 import { regimeLabel } from '../lib/pricing.js'
 import { cardStyle, overline } from '../lib/ui.js'
 
@@ -13,7 +13,11 @@ export default function EstimateCard({ spec, derived }) {
   const d = derived
   if (!e) return null
 
-  const midLeft = (((1 - e.lo) / (e.hi - e.lo)) * 100).toFixed(0) + '%'
+  // Position of the P50 marker on the P10→P90 rail. Guard the degenerate fit
+  // (lo === hi, e.g. a 2-point fit) and clamp lo>1 / hi<1 so the marker never
+  // renders at 'NaN%' or off the rail.
+  const loHiSpan = e.hi - e.lo
+  const midLeft = (loHiSpan > 0 ? Math.max(0, Math.min(1, (1 - e.lo) / loHiSpan)) * 100 : 50).toFixed(0) + '%'
 
   // Band dot-strip: real comparables within ±50% size, placed on the P10→P90 axis.
   const span = e.p90 - e.p10
@@ -50,7 +54,7 @@ export default function EstimateCard({ spec, derived }) {
   // Breakdown chips: base curve → active add-ons → final estimate.
   const chips = [{ label: 'Base curve', val: fmtMoney(e.base), final: false }]
   ADDONS.forEach((a) => {
-    if (spec.addons[a.id]) chips.push({ label: a.short, val: '+' + Math.round((a.factor - 1) * 100) + '%', final: false })
+    if (spec.addons[a.id]) chips.push({ label: a.short, val: pctLabel(a.factor), final: false })
   })
   chips.push({ label: 'Estimate', val: fmtMoney(e.adj), final: true })
 
@@ -151,11 +155,15 @@ export default function EstimateCard({ spec, derived }) {
         <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>Band width ×{(e.hi / e.lo).toFixed(1)} (P10→P90)</span>
       </div>
 
-      {d.near.length < 3 && (
+      {d.visible.length === 0 ? (
+        <div style={{ marginTop: 14, padding: '11px 14px', background: 'rgba(189,40,40,.07)', border: '1px solid rgba(189,40,40,.3)', borderRadius: 10, fontSize: 12.5, color: 'var(--bad)', lineHeight: 1.45 }}>
+          ⚠ No comparables match the current filters — this band is the full-market estimate, not backed by the filtered set. Clear filters to see the supporting data.
+        </div>
+      ) : d.near.length < 3 ? (
         <div style={{ marginTop: 14, padding: '11px 14px', background: 'rgba(189,40,40,.07)', border: '1px solid rgba(189,40,40,.3)', borderRadius: 10, fontSize: 12.5, color: 'var(--bad)', lineHeight: 1.45 }}>
           ⚠ Thin data near this spec — fewer than 3 close comparables. Treat this band as a rough indication, not a quote.
         </div>
-      )}
+      ) : null}
     </section>
   )
 }

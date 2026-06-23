@@ -30,7 +30,7 @@ export default function Comparables({ derived, onPreview }) {
         </div>
       </div>
       <div style={{ fontSize: 11.5, color: 'var(--faint)', margin: '2px 0 14px' }}>
-        Extraction confidence shown per row — low-trust values are muted. Click a row to open its source document.
+        Extraction confidence shown per row — low-trust values are muted. Click a quote row to open its source PDF.
       </div>
 
       <div
@@ -49,28 +49,34 @@ export default function Comparables({ derived, onPreview }) {
         const dimmed = conf < 70
         const isBid = r.src === 'bid'
         const basisOutlier = majBasis && r.incoterm_basis && r.incoterm_basis !== majBasis
+        // Only quote rows have a source PDF in the bucket; bids are xlsx bid sheets.
+        const canPreview = !!onPreview && r.src === 'quote'
         return (
           <div
             key={r.id || i}
-            role="button"
-            tabIndex={0}
-            title="View source document"
-            onClick={() => onPreview && onPreview(r)}
-            onKeyDown={(e) => {
-              if (onPreview && (e.key === 'Enter' || e.key === ' ')) {
-                e.preventDefault()
-                onPreview(r)
-              }
-            }}
+            role={canPreview ? 'button' : undefined}
+            tabIndex={canPreview ? 0 : undefined}
+            title={canPreview ? 'View source document' : undefined}
+            onClick={canPreview ? () => onPreview(r) : undefined}
+            onKeyDown={
+              canPreview
+                ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onPreview(r)
+                    }
+                  }
+                : undefined
+            }
             style={{
               display: 'grid', gridTemplateColumns: GRID, gap: 0, alignItems: 'center',
               padding: '10px 2px', borderBottom: '1px solid var(--line)',
               background: i === 0 ? 'var(--accentSoft)' : 'transparent',
-              borderRadius: i === 0 ? 8 : 0, cursor: 'pointer',
+              borderRadius: i === 0 ? 8 : 0, cursor: canPreview ? 'pointer' : 'default',
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
-              <span aria-hidden="true" style={{ fontSize: 12, color: 'var(--accent)', flex: 'none' }}>📄</span>
+              {canPreview && <span aria-hidden="true" style={{ fontSize: 12, color: 'var(--accent)', flex: 'none' }}>📄</span>}
               <span style={{ fontWeight: 600, fontSize: 13, letterSpacing: '.02em' }}>{r.oem_id}</span>
               {r.rev > 0 && (
                 <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', background: 'var(--panel2)', border: '1px solid var(--line)', borderRadius: 5, padding: '1px 5px' }}>

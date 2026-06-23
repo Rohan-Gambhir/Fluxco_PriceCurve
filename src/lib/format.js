@@ -28,6 +28,13 @@ export function cap(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s
 }
 
+// Signed percent delta for an add-on factor: +40%, +26%, +0.5% (one decimal
+// only when < 1%, so the FAT driver reads +0.5% rather than rounding to +1%).
+export function pctLabel(factor) {
+  const rounded = Math.round((factor - 1) * 100 * 10) / 10
+  return '+' + rounded + '%'
+}
+
 // Pick a point's color for the active color-by dimension.
 export function colorFor(r, colorBy) {
   if (colorBy === 'region') return REGION_COLORS[r.region] || '#aab0b8'

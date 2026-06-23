@@ -4,14 +4,8 @@
 // count n below (n flagged red when ≤ 1 — thin evidence, per the brief).
 
 import { ADDONS } from '../lib/constants.js'
+import { pctLabel } from '../lib/format.js'
 import { cardStyle, overline } from '../lib/ui.js'
-
-// Exact delta label: +40%, +26%, +0.5% (keep one decimal only when < 1%).
-function pctLabel(factor) {
-  const raw = (factor - 1) * 100
-  const rounded = Math.round(raw * 10) / 10
-  return '+' + rounded + '%'
-}
 
 export default function DriversPanel({ spec, persist }) {
   return (

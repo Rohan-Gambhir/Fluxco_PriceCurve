@@ -52,8 +52,13 @@ def verify_bearer(authorization: Optional[str]) -> Optional[dict]:
     token = authorization[len("Bearer "):].strip()
     try:
         claims = id_token.verify_oauth2_token(token, _GOOGLE_REQUEST, _GOOGLE_CLIENT_ID)
-    except Exception as e:  # noqa: BLE001 — any verification failure is a 401
+    except ValueError as e:
+        # Genuinely invalid token (bad signature, expired, wrong audience) — 401.
         raise AuthError(401, f"Invalid token ({type(e).__name__})")
+    except Exception as e:  # noqa: BLE001
+        # Transport / cert-fetch failure verifying the token — retryable, NOT an
+        # auth failure. Return 503 so the client doesn't drop the session on a blip.
+        raise AuthError(503, f"Token verification unavailable ({type(e).__name__})")
     if not claims.get("email_verified"):
         raise AuthError(403, "Email not verified")
     email = (claims.get("email") or "").lower()
