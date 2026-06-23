@@ -7,7 +7,7 @@ import { SRC_COLORS, WIND_COLORS } from '../lib/constants.js'
 import { fmtMoney, fmtKva, cap } from '../lib/format.js'
 import { cardStyle } from '../lib/ui.js'
 
-const GRID = '1.5fr .5fr .7fr .95fr .75fr 1fr .62fr'
+const GRID = '1fr 1.8fr .5fr .55fr .85fr .65fr .9fr .55fr'
 
 export default function Comparables({ derived, onPreview }) {
   const d = derived
@@ -30,7 +30,8 @@ export default function Comparables({ derived, onPreview }) {
         </div>
       </div>
       <div style={{ fontSize: 11.5, color: 'var(--faint)', margin: '2px 0 14px' }}>
-        Extraction confidence shown per row — low-trust values are muted. Click a quote row to open its source PDF.
+        Extraction confidence shown per row — low-trust values are muted. The Document column is the source file
+        name (matches the chart tooltip, so you can tie a row to a point); click a quote row to open it.
       </div>
 
       <div
@@ -40,7 +41,7 @@ export default function Comparables({ derived, onPreview }) {
           padding: '0 2px 8px', borderBottom: '1px solid var(--line)',
         }}
       >
-        <span>OEM</span><span>Src</span><span>Rating</span><span>Winding</span><span>Incoterm</span>
+        <span>OEM</span><span>Document</span><span>Src</span><span>Rating</span><span>Winding</span><span>Incoterm</span>
         <span style={{ textAlign: 'right' }}>Unit price</span><span style={{ textAlign: 'right' }}>$/kVA</span>
       </div>
 
@@ -51,6 +52,7 @@ export default function Comparables({ derived, onPreview }) {
         const basisOutlier = majBasis && r.incoterm_basis && r.incoterm_basis !== majBasis
         // Only quote rows have a source PDF in the bucket; bids are xlsx bid sheets.
         const canPreview = !!onPreview && r.src === 'quote'
+        const sourceName = (r.filename || '').split('#')[0] || '—'
         return (
           <div
             key={r.id || i}
@@ -76,7 +78,6 @@ export default function Comparables({ derived, onPreview }) {
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
-              {canPreview && <span aria-hidden="true" style={{ fontSize: 12, color: 'var(--accent)', flex: 'none' }}>📄</span>}
               <span style={{ fontWeight: 600, fontSize: 13, letterSpacing: '.02em' }}>{r.oem_id}</span>
               {r.rev > 0 && (
                 <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', background: 'var(--panel2)', border: '1px solid var(--line)', borderRadius: 5, padding: '1px 5px' }}>
@@ -88,6 +89,15 @@ export default function Comparables({ derived, onPreview }) {
                   closest
                 </span>
               )}
+            </span>
+            <span
+              title={canPreview ? 'Open ' + sourceName : sourceName}
+              style={{
+                fontFamily: "'Geist'", fontSize: 12, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap', color: canPreview ? 'var(--accent)' : 'var(--muted)',
+              }}
+            >
+              {sourceName}
             </span>
             <span
               style={{
