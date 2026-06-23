@@ -62,26 +62,33 @@ export default function EstimateCard({ spec, derived }) {
       aria-label="Price estimate"
       style={{ ...cardStyle, padding: '24px 26px' }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 20 }}>
-        <div>
-          <div style={overline}>Estimated unit price · P10–P90 band</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 7 }}>
-            <div style={{ fontFamily: "'Lato',sans-serif", fontSize: 48, fontWeight: 300, letterSpacing: '-.01em', lineHeight: 1 }}>
+      <div style={{ marginBottom: 20 }}>
+        <div style={overline}>Estimated unit price</div>
+        <div style={{ fontFamily: "'Lato',sans-serif", fontSize: 48, fontWeight: 300, letterSpacing: '-.01em', lineHeight: 1, marginTop: 7 }}>
+          {fmtMoney(e.p50)}
+        </div>
+        <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 8 }}>
+          Midpoint of the P10–P90 band · {regimeLabel(spec.source, spec.kva)}
+        </div>
+
+        {/* secondary ranges */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 28, marginTop: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+              Unit-price range · P10–P90
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginTop: 3 }}>
               {fmtMoney(e.p10)} – {fmtMoney(e.p90)}
             </div>
           </div>
-          <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 8 }}>
-            Midpoint ≈ <strong style={{ color: 'var(--text)' }}>{fmtMoney(e.p50)}</strong> / unit ·{' '}
-            {regimeLabel(spec.source, spec.kva)}
-          </div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={overline}>$/kVA band</div>
-          <div style={{ fontFamily: "'Lato',sans-serif", fontSize: 36, fontWeight: 300, letterSpacing: '-.01em', marginTop: 9, lineHeight: 1 }}>
-            ${Math.round(e.dpk10)} – ${Math.round(e.dpk90)}
-          </div>
-          <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 8 }}>
-            Midpoint ≈ <strong style={{ color: 'var(--text)' }}>${Math.round(e.dpk50)}</strong>/kVA
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+              $/kVA · mid · P10–P90
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginTop: 3 }}>
+              ${Math.round(e.dpk50)}{' '}
+              <span style={{ color: 'var(--muted)', fontWeight: 500 }}>· ${Math.round(e.dpk10)}–${Math.round(e.dpk90)}</span>
+            </div>
           </div>
         </div>
       </div>
