@@ -9,7 +9,7 @@ import { cardStyle } from '../lib/ui.js'
 
 const GRID = '1.5fr .5fr .7fr .95fr .75fr 1fr .62fr'
 
-export default function Comparables({ derived }) {
+export default function Comparables({ derived, onPreview }) {
   const d = derived
 
   // Majority incoterm basis among the comparables (to flag outliers).
@@ -30,7 +30,7 @@ export default function Comparables({ derived }) {
         </div>
       </div>
       <div style={{ fontSize: 11.5, color: 'var(--faint)', margin: '2px 0 14px' }}>
-        Extraction confidence shown per row — low-trust values are muted.
+        Extraction confidence shown per row — low-trust values are muted. Click a row to open its source document.
       </div>
 
       <div
@@ -52,14 +52,25 @@ export default function Comparables({ derived }) {
         return (
           <div
             key={r.id || i}
+            role="button"
+            tabIndex={0}
+            title="View source document"
+            onClick={() => onPreview && onPreview(r)}
+            onKeyDown={(e) => {
+              if (onPreview && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault()
+                onPreview(r)
+              }
+            }}
             style={{
               display: 'grid', gridTemplateColumns: GRID, gap: 0, alignItems: 'center',
               padding: '10px 2px', borderBottom: '1px solid var(--line)',
               background: i === 0 ? 'var(--accentSoft)' : 'transparent',
-              borderRadius: i === 0 ? 8 : 0,
+              borderRadius: i === 0 ? 8 : 0, cursor: 'pointer',
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+              <span aria-hidden="true" style={{ fontSize: 12, color: 'var(--accent)', flex: 'none' }}>📄</span>
               <span style={{ fontWeight: 600, fontSize: 13, letterSpacing: '.02em' }}>{r.oem_id}</span>
               {r.rev > 0 && (
                 <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', background: 'var(--panel2)', border: '1px solid var(--line)', borderRadius: 5, padding: '1px 5px' }}>

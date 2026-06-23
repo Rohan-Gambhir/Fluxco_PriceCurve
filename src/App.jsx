@@ -97,7 +97,7 @@ export default function App() {
               <EstimateCard spec={spec} derived={derived} />
               <ConfidencePanel spec={spec} derived={derived} />
               <ChartsSection spec={spec} persist={persist} derived={derived} model={data.model} themeVars={themeVars} onPreview={setPreviewRow} />
-              <Comparables derived={derived} />
+              <Comparables derived={derived} onPreview={setPreviewRow} />
             </div>
           )}
 
