@@ -1,61 +1,140 @@
-// "The real quotes behind this estimate" — the credibility anchor. The nearest
-// historical quotes by rating, each with source badge, OEM (+ revision), winding,
-// incoterm basis, unit price and $/kVA. Low extraction-confidence rows are muted;
-// incoterm bases that differ from the majority are flagged copper.
+// "The real quotes behind this estimate" — the credibility anchor. The historical
+// quotes nearest the spec by rating, each with source badge, OEM (+ revision),
+// source document, winding, incoterm, unit price and $/kVA. Columns are sortable
+// and the list can expand from the nearest 8 to all comparables in the current
+// source. Low extraction-confidence rows are muted; off-majority incoterm flagged.
 
+import { useState } from 'react'
 import { SRC_COLORS, WIND_COLORS } from '../lib/constants.js'
 import { fmtMoney, fmtKva, cap } from '../lib/format.js'
 import { cardStyle } from '../lib/ui.js'
 
 const GRID = '1fr 1.8fr .5fr .55fr .85fr .65fr .9fr .55fr'
 
+const srcName = (r) => (r.filename || '').split('#')[0] || '—'
+
+const COLUMNS = [
+  { key: 'oem', label: 'OEM', cmp: (a, b) => (a.oem_id || '').localeCompare(b.oem_id || '') },
+  { key: 'doc', label: 'Document', cmp: (a, b) => srcName(a).localeCompare(srcName(b)) },
+  { key: 'src', label: 'Src', cmp: (a, b) => (a.src || '').localeCompare(b.src || '') },
+  { key: 'kva', label: 'Rating', cmp: (a, b) => a.kva - b.kva },
+  { key: 'winding', label: 'Winding', cmp: (a, b) => (a.winding || '').localeCompare(b.winding || '') },
+  { key: 'incoterm', label: 'Incoterm', cmp: (a, b) => (a.incoterm_basis || '').localeCompare(b.incoterm_basis || '') },
+  { key: 'ppu', label: 'Unit price', align: 'right', cmp: (a, b) => (a.ppu || 0) - (b.ppu || 0) },
+  { key: 'dpk', label: '$/kVA', align: 'right', cmp: (a, b) => (a.dpk || 0) - (b.dpk || 0) },
+]
+
 export default function Comparables({ derived, onPreview }) {
   const d = derived
+  const specKva = d.S.kva
+  const [sortKey, setSortKey] = useState('dist') // 'dist' = nearest by rating (default)
+  const [sortDir, setSortDir] = useState('asc')
+  const [showAll, setShowAll] = useState(false)
 
-  // Majority incoterm basis among the comparables (to flag outliers).
+  const distOf = (r) => Math.abs(Math.log10(r.kva / specKva))
+  const distSorted = [...d.visible].sort((a, b) => distOf(a) - distOf(b))
+  const closestId = distSorted[0]?.id
+  const pool = showAll ? distSorted : distSorted.slice(0, 8)
+
+  const col = COLUMNS.find((c) => c.key === sortKey)
+  const rows = [...pool]
+  if (col) rows.sort(col.cmp) // sortKey 'dist' => keep nearest-first order
+  if (sortDir === 'desc') rows.reverse()
+
+  // The 'closest' row highlight only makes sense when the list is in distance order.
+  const highlightClosest = sortKey === 'dist'
+
+  // Majority incoterm basis among the DISPLAYED comparables (to flag outliers).
   const majBasis = (() => {
     const c = {}
-    d.comps.forEach((r) => { if (r.incoterm_basis) c[r.incoterm_basis] = (c[r.incoterm_basis] || 0) + 1 })
+    pool.forEach((r) => { if (r.incoterm_basis) c[r.incoterm_basis] = (c[r.incoterm_basis] || 0) + 1 })
     let mx = null, mc = 0
     for (const k in c) if (c[k] > mc) { mc = c[k]; mx = k }
     return mx
   })()
 
+  const onSort = (key) => {
+    if (sortKey === key) setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'))
+    else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
+
   return (
     <section style={{ ...cardStyle, padding: '20px 22px' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>The real quotes behind this estimate</div>
-        <div style={{ fontSize: 11.5, color: 'var(--faint)', whiteSpace: 'nowrap' }}>
-          nearest by rating · {d.visible.length} in current source
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 11.5, color: 'var(--faint)', whiteSpace: 'nowrap' }}>
+            {sortKey === 'dist' ? 'nearest by rating · ' : ''}
+            {rows.length} of {d.visible.length} in current source
+          </span>
+          {sortKey !== 'dist' && (
+            <button
+              onClick={() => { setSortKey('dist'); setSortDir('asc') }}
+              title="Reset to nearest by rating"
+              style={{ border: '1px solid var(--line)', background: 'var(--panel2)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, color: 'var(--accent)', padding: '4px 9px', borderRadius: 7, whiteSpace: 'nowrap' }}
+            >
+              ↺ Nearest
+            </button>
+          )}
+          {d.visible.length > 8 && (
+            <button
+              onClick={() => setShowAll((s) => !s)}
+              style={{ border: '1px solid var(--line)', background: 'var(--panel2)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, color: 'var(--accent)', padding: '4px 9px', borderRadius: 7, whiteSpace: 'nowrap' }}
+            >
+              {showAll ? 'Nearest 8' : `Show all ${d.visible.length}`}
+            </button>
+          )}
         </div>
       </div>
       <div style={{ fontSize: 11.5, color: 'var(--faint)', margin: '2px 0 14px' }}>
-        Extraction confidence shown per row — low-trust values are muted. The Document column is the source file
-        name (matches the chart tooltip, so you can tie a row to a point); click a quote row to open it.
+        Click a column to sort; click a quote row to open its source PDF. The Document column matches the chart
+        tooltip, so you can tie a row to a point above. Low-trust values are muted.
       </div>
 
       <div
         style={{
           display: 'grid', gridTemplateColumns: GRID, gap: 0, fontSize: 11, fontWeight: 700,
-          letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--faint)',
+          letterSpacing: '.04em', textTransform: 'uppercase',
           padding: '0 2px 8px', borderBottom: '1px solid var(--line)',
         }}
       >
-        <span>OEM</span><span>Document</span><span>Src</span><span>Rating</span><span>Winding</span><span>Incoterm</span>
-        <span style={{ textAlign: 'right' }}>Unit price</span><span style={{ textAlign: 'right' }}>$/kVA</span>
+        {COLUMNS.map((c) => {
+          const active = sortKey === c.key
+          return (
+            <span
+              key={c.key}
+              onClick={() => onSort(c.key)}
+              title={`Sort by ${c.label}`}
+              style={{ cursor: 'pointer', userSelect: 'none', textAlign: c.align || 'left', color: active ? 'var(--accent)' : 'var(--faint)' }}
+            >
+              {c.label}
+              {active ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
+            </span>
+          )
+        })}
       </div>
 
-      {d.comps.map((r, i) => {
+      {rows.length === 0 && (
+        <div style={{ fontSize: 12.5, color: 'var(--faint)', padding: '16px 2px' }}>
+          No comparables in the current source / filters.
+        </div>
+      )}
+
+      {rows.map((r) => {
         const conf = Math.round((r.dpk_conf || 0) * 100)
         const dimmed = conf < 70
         const isBid = r.src === 'bid'
+        const isClosest = r.id === closestId
         const basisOutlier = majBasis && r.incoterm_basis && r.incoterm_basis !== majBasis
         // Only quote rows have a source PDF in the bucket; bids are xlsx bid sheets.
         const canPreview = !!onPreview && r.src === 'quote'
-        const sourceName = (r.filename || '').split('#')[0] || '—'
+        const sourceName = srcName(r)
         return (
           <div
-            key={r.id || i}
+            key={r.id}
             role={canPreview ? 'button' : undefined}
             tabIndex={canPreview ? 0 : undefined}
             title={canPreview ? 'View source document' : undefined}
@@ -73,8 +152,8 @@ export default function Comparables({ derived, onPreview }) {
             style={{
               display: 'grid', gridTemplateColumns: GRID, gap: 0, alignItems: 'center',
               padding: '10px 2px', borderBottom: '1px solid var(--line)',
-              background: i === 0 ? 'var(--accentSoft)' : 'transparent',
-              borderRadius: i === 0 ? 8 : 0, cursor: canPreview ? 'pointer' : 'default',
+              background: isClosest && highlightClosest ? 'var(--accentSoft)' : 'transparent',
+              borderRadius: isClosest && highlightClosest ? 8 : 0, cursor: canPreview ? 'pointer' : 'default',
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
@@ -84,7 +163,7 @@ export default function Comparables({ derived, onPreview }) {
                   r{r.rev}
                 </span>
               )}
-              {i === 0 && (
+              {isClosest && (
                 <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accentSoft)', borderRadius: 5, padding: '1px 6px' }}>
                   closest
                 </span>

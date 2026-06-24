@@ -3,15 +3,44 @@
 // = bids), the base-curve → add-on → final chip breakdown, a confidence chip,
 // and a thin-data warning. Honest ranges, never a false-precision point price.
 
+import { useState, useRef } from 'react'
 import { ADDONS, SRC_COLORS } from '../lib/constants.js'
 import { fmtMoney, fmtKva, pctLabel } from '../lib/format.js'
 import { regimeLabel } from '../lib/pricing.js'
 import { cardStyle, overline } from '../lib/ui.js'
 
 export default function EstimateCard({ spec, derived }) {
+  const [copied, setCopied] = useState(false)
+  const copyTimer = useRef(null)
   const e = derived.est
   const d = derived
   if (!e) return null
+
+  // Filters only narrow the displayed comparables — they don't move the price.
+  const filtersActive = ['windOff', 'regionOff', 'unitsOff', 'hvOff', 'incoOff'].some((k) => (spec[k] || []).length > 0)
+  // 'Both' switches curve regime (bid → quote) at 2.5 MVA; flag the transition zone.
+  const nearSplit = spec.source === 'both' && spec.kva >= 2000 && spec.kva <= 3125
+
+  const onCopy = async () => {
+    const lines = [
+      `Transformer ~${fmtKva(spec.kva)} kVA · ${regimeLabel(spec.source, spec.kva)}`,
+      `Estimated unit price: ${fmtMoney(e.p50)}  (P10–P90 ${fmtMoney(e.p10)}–${fmtMoney(e.p90)})`,
+      `$/kVA: $${Math.round(e.dpk50)}  ($${Math.round(e.dpk10)}–$${Math.round(e.dpk90)})`,
+    ]
+    const adders = ADDONS.filter((a) => spec.addons[a.id])
+    if (adders.length) lines.push(`Configured: ${adders.map((a) => `${a.short} ${pctLabel(a.factor)}`).join(', ')}`)
+    if (spec.units > 1) {
+      lines.push(`Order of ${spec.units}: ${fmtMoney(e.p50 * spec.units)}  (${fmtMoney(e.p10 * spec.units)}–${fmtMoney(e.p90 * spec.units)})`)
+    }
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'))
+      setCopied(true)
+      clearTimeout(copyTimer.current)
+      copyTimer.current = setTimeout(() => setCopied(false), 1600)
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
 
   // Position of the P50 marker on the P10→P90 rail. Guard the degenerate fit
   // (lo === hi, e.g. a 2-point fit) and clamp lo>1 / hi<1 so the marker never
@@ -67,12 +96,25 @@ export default function EstimateCard({ spec, derived }) {
       style={{ ...cardStyle, padding: '24px 26px' }}
     >
       <div style={{ marginBottom: 20 }}>
-        <div style={overline}>Estimated base price</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={overline}>Estimated unit price</div>
+          <button
+            onClick={onCopy}
+            title="Copy the estimate band to the clipboard"
+            style={{
+              border: '1px solid var(--line)', background: copied ? 'var(--accentSoft)' : 'var(--panel2)',
+              cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 600,
+              color: 'var(--accent)', padding: '5px 11px', borderRadius: 8, whiteSpace: 'nowrap',
+            }}
+          >
+            {copied ? '✓ Copied' : 'Copy estimate'}
+          </button>
+        </div>
         <div style={{ fontFamily: "'Lato',sans-serif", fontSize: 48, fontWeight: 300, letterSpacing: '-.01em', lineHeight: 1, marginTop: 7 }}>
-          {fmtMoney(e.base)}
+          {fmtMoney(e.p50)}
         </div>
         <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 8 }}>
-          Base curve · {regimeLabel(spec.source, spec.kva)}
+          Central estimate · {regimeLabel(spec.source, spec.kva)}
         </div>
 
         {/* Base curve → price adders → Estimate. The base stays fixed; only the
@@ -115,6 +157,17 @@ export default function EstimateCard({ spec, derived }) {
               <span style={{ color: 'var(--muted)', fontWeight: 500 }}>· ${Math.round(e.dpk10)}–${Math.round(e.dpk90)}</span>
             </div>
           </div>
+          {spec.units > 1 && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                Order total · {spec.units} units
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginTop: 3 }}>
+                {fmtMoney(e.p50 * spec.units)}{' '}
+                <span style={{ color: 'var(--muted)', fontWeight: 500 }}>· {fmtMoney(e.p10 * spec.units)}–{fmtMoney(e.p90 * spec.units)}</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -155,6 +208,18 @@ export default function EstimateCard({ spec, derived }) {
         <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>·</span>
         <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>Band width ×{(e.hi / e.lo).toFixed(1)} (P10→P90)</span>
       </div>
+
+      {nearSplit && (
+        <div style={{ marginTop: 12, padding: '10px 13px', background: 'rgba(155,78,39,.09)', border: '1px solid rgba(155,78,39,.32)', borderRadius: 10, fontSize: 12, color: 'var(--warn)', lineHeight: 1.45 }}>
+          ⚠ Near the 2.5 MVA bid/quote boundary — on “Both”, the curve switches regime here (public bids below, OEM quotes at/above), so small rating changes can move the estimate sharply.
+        </div>
+      )}
+
+      {filtersActive && d.visible.length > 0 && d.near.length >= 3 && (
+        <div style={{ marginTop: 12, padding: '10px 13px', background: 'var(--panel2)', border: '1px solid var(--line)', borderRadius: 10, fontSize: 12, color: 'var(--muted)', lineHeight: 1.45 }}>
+          ℹ Filters narrow the comparables shown below — the price band is the full-market curve fit and does not change with them.
+        </div>
+      )}
 
       {d.visible.length === 0 ? (
         <div style={{ marginTop: 14, padding: '11px 14px', background: 'rgba(189,40,40,.07)', border: '1px solid rgba(189,40,40,.3)', borderRadius: 10, fontSize: 12.5, color: 'var(--bad)', lineHeight: 1.45 }}>
